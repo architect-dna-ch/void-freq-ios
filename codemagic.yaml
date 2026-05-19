@@ -39,8 +39,7 @@ workflows:
           # Provisioning profile
           PP_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PP_DIR"
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PP_DIR/VoidFreq.mobileprovision"
-          echo "Profile UUID: $(security cms -D -i "$PP_DIR/VoidFreq.mobileprovision" 2>/dev/null | grep -A1 UUID | tail -1 | tr -d ' <>/string')"
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PP_DIR/00652244-a02d-441d-b4ba-2eab1da7aaff.mobileprovision"
 
       - name: Resolve Swift packages
         script: |
