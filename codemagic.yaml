@@ -13,7 +13,8 @@ workflows:
       vars:
         BUNDLE_ID: ch.architectdna.voidfreq
         TEAM_ID: V28MG47TZC
-      # DIST_P12_BASE64 and PROVISIONING_PROFILE_BASE64 set in Codemagic app environment
+      groups:
+        - apple_signing
 
     scripts:
       - name: Install dependencies
