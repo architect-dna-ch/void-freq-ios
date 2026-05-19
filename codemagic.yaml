@@ -14,7 +14,7 @@ workflows:
         BUNDLE_ID: ch.architectdna.voidfreq
         TEAM_ID: V28MG47TZC
       groups:
-        - apple_signing
+        - signing
 
     scripts:
       - name: Install dependencies
