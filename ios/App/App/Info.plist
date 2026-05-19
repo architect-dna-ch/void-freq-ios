@@ -47,11 +47,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
-	<key>UIStatusBarStyle</key>
+<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>VOID FREQ does not use the microphone.</string>
