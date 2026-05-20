@@ -25,6 +25,11 @@ workflows:
 
       - name: Install signing assets
         script: |
+          echo "P12 var length: ${#DIST_P12_BASE64}"
+          echo "PP var length: ${#PROVISIONING_PROFILE_BASE64}"
+          if [ -z "$DIST_P12_BASE64" ]; then echo "ERROR: DIST_P12_BASE64 is empty"; exit 1; fi
+          if [ -z "$PROVISIONING_PROFILE_BASE64" ]; then echo "ERROR: PROVISIONING_PROFILE_BASE64 is empty"; exit 1; fi
+
           # Keychain
           security create-keychain -p cmpass build.keychain
           security default-keychain -s build.keychain
