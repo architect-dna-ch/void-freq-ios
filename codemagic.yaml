@@ -1,4 +1,58 @@
 workflows:
+  release-to-store:
+    name: VOID FREQ Release to App Store
+    max_build_duration: 10
+    instance_type: mac_mini_m2
+
+    environment:
+      groups:
+        - apple_credentials
+
+    scripts:
+      - name: Release approved version
+        script: |
+          pip3 install PyJWT cryptography -q
+
+          python3 << 'EOF'
+          import jwt, time, urllib.request, json, sys
+
+          key = open('/tmp/asc.p8','w')
+          import os
+          raw = os.environ['ASC_PRIVATE_KEY']
+          key.write(raw)
+          key.close()
+
+          token = jwt.encode(
+            {'iss': os.environ['ASC_ISSUER_ID'], 'iat': int(time.time()), 'exp': int(time.time())+300, 'aud': 'appstoreconnect-v1'},
+            open('/tmp/asc.p8').read(),
+            algorithm='ES256',
+            headers={'kid': os.environ['ASC_KEY_ID']}
+          )
+
+          headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+
+          def api(method, path, body=None):
+            url = f'https://api.appstoreconnect.apple.com{path}'
+            data = json.dumps(body).encode() if body else None
+            req = urllib.request.Request(url, data=data, headers=headers, method=method)
+            try:
+              with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+            except urllib.error.HTTPError as e:
+              print(e.read().decode()); sys.exit(1)
+
+          versions = api('GET', '/v1/apps/6670469698/appStoreVersions')
+          for v in versions['data']:
+            state = v['attributes']['appVersionState']
+            vid = v['id']
+            print(f"Version {v['attributes']['versionString']}: {state}")
+            if state == 'PENDING_DEVELOPER_RELEASE':
+              print(f"Releasing {vid}...")
+              api('POST', f'/v1/appStoreVersions/{vid}/appStoreVersionReleaseRequest',
+                {'data': {'type': 'appStoreVersionReleaseRequests', 'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
+              print("Released!")
+          EOF
+
   ios-release:
     name: VOID FREQ iOS Release
     max_build_duration: 60
