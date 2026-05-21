@@ -41,14 +41,19 @@ workflows:
             except urllib.error.HTTPError as e:
               print(e.read().decode()); sys.exit(1)
 
-          versions = api('GET', '/v1/apps/6670469698/appStoreVersions')
+          apps = api('GET', '/v1/apps?filter[bundleId]=ch.architectdna.voidfreq')
+          print('apps:', json.dumps(apps.get('data',[{}])[0].get('attributes',{})))
+          app_id = apps['data'][0]['id']
+          print(f"App ID: {app_id}")
+
+          versions = api('GET', f'/v1/apps/{app_id}/appStoreVersions')
           for v in versions['data']:
             state = v['attributes']['appVersionState']
             vid = v['id']
             print(f"Version {v['attributes']['versionString']}: {state}")
             if state == 'PENDING_DEVELOPER_RELEASE':
               print(f"Releasing {vid}...")
-              api('POST', f'/v1/appStoreVersions/{vid}/appStoreVersionReleaseRequest',
+              api('POST', f'/v1/appStoreVersionReleaseRequests',
                 {'data': {'type': 'appStoreVersionReleaseRequests', 'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
               print("Released!")
           EOF
