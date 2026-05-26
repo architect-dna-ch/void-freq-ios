@@ -1,6 +1,6 @@
 workflows:
   release-to-store:
-    name: VOID FREQ Release to App Store
+    name: NOOR Release to App Store
     max_build_duration: 10
     instance_type: mac_mini_m2
 
@@ -41,7 +41,7 @@ workflows:
             except urllib.error.HTTPError as e:
               print(e.read().decode()); sys.exit(1)
 
-          apps = api('GET', '/v1/apps?filter[bundleId]=ch.architectdna.voidfreq')
+          apps = api('GET', '/v1/apps?filter[bundleId]=ch.architectdna.noor')
           print('apps:', json.dumps(apps.get('data',[{}])[0].get('attributes',{})))
           app_id = apps['data'][0]['id']
           print(f"App ID: {app_id}")
@@ -59,7 +59,7 @@ workflows:
           EOF
 
   ios-release:
-    name: VOID FREQ iOS Release
+    name: NOOR iOS Release
     max_build_duration: 60
     instance_type: mac_mini_m2
 
@@ -70,7 +70,7 @@ workflows:
       xcode: 26
       node: 24
       vars:
-        BUNDLE_ID: ch.architectdna.voidfreq
+        BUNDLE_ID: ch.architectdna.noor
         TEAM_ID: V28MG47TZC
       groups:
         - signing
@@ -84,11 +84,6 @@ workflows:
 
       - name: Install signing assets
         script: |
-          echo "P12 var length: ${#DIST_P12_BASE64}"
-          echo "PP var length: ${#PROVISIONING_PROFILE_BASE64}"
-          if [ -z "$DIST_P12_BASE64" ]; then echo "ERROR: DIST_P12_BASE64 is empty"; exit 1; fi
-          if [ -z "$PROVISIONING_PROFILE_BASE64" ]; then echo "ERROR: PROVISIONING_PROFILE_BASE64 is empty"; exit 1; fi
-
           # Keychain
           security create-keychain -p cmpass build.keychain
           security default-keychain -s build.keychain
@@ -100,10 +95,16 @@ workflows:
           security import /tmp/dist.p12 -k build.keychain -P cmpass -T /usr/bin/codesign -T /usr/bin/xcodebuild
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k cmpass build.keychain
 
-          # Provisioning profile
-          PP_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PP_DIR"
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PP_DIR/00652244-a02d-441d-b4ba-2eab1da7aaff.mobileprovision"
+          # Fetch & install provisioning profile via Codemagic CLI
+          pip3 install codemagic-cli-tools -q
+          app-store-connect fetch-signing-files \
+            ch.architectdna.noor \
+            --type IOS_APP_STORE \
+            --create \
+            --certificate-key /tmp/dist.p12 \
+            --private-key $ASC_PRIVATE_KEY \
+            --key-id $ASC_KEY_ID \
+            --issuer-id $ASC_ISSUER_ID
 
       - name: Resolve Swift packages
         script: |
@@ -120,7 +121,7 @@ workflows:
             -archivePath build/App.xcarchive \
             archive \
             CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="VoidFreq Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="NOOR Distribution" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=$TEAM_ID
 

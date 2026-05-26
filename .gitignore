@@ -3,3 +3,4 @@ ios/App/Pods/
 ios/App/App.xcworkspace/xcuserdata/
 *.DS_Store
 build/
+signing/

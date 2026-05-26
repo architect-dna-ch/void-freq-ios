@@ -1,7 +1,7 @@
 default_platform(:ios)
 
-BUNDLE_ID = "ch.architectdna.voidfreq"
-APP_NAME  = "VOID FREQ"
+BUNDLE_ID = "ch.architectdna.noor"
+APP_NAME  = "Noor — Dhikr & Reflection"
 
 platform :ios do
 
@@ -12,7 +12,7 @@ platform :ios do
       app_name:       APP_NAME,
       language:       "en-US",
       app_version:    "1.0.0",
-      sku:            "voidfreq-001",
+      sku:            "noor-001",
       team_name:      nil,
       enable_services: {}
     )
