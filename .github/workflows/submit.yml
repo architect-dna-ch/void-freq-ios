@@ -188,7 +188,9 @@ jobs:
               if iphone_set_id: wait_for_screenshots(iphone_set_id, len(iphone_shots))
               if ipad_set_id:   wait_for_screenshots(ipad_set_id, len(ipad_shots))
 
-          # Find or create a review submission
+          # Find or create a review submission FOR THIS VERSION SPECIFICALLY.
+          # A submission from a prior version (e.g. an old COMPLETE submission
+          # for 1.0) must never short-circuit submitting the current version.
           submission_id = None
           r = requests.get(f"{BASE}/reviewSubmissions?filter[app]={app_id}&filter[platform]=IOS&limit=100", headers=H())
           if r.status_code == 200:
@@ -196,11 +198,19 @@ jobs:
                   sub_state = sub["attributes"].get("state","")
                   sub_id = sub["id"]
                   created = sub["attributes"].get("createdDate","")
-                  print(f"  Submission {sub_id}: state={sub_state} created={created}")
+                  ri0 = requests.get(f"{BASE}/reviewSubmissions/{sub_id}/items", headers=H())
+                  item_version_ids = [
+                      i.get("relationships",{}).get("appStoreVersion",{}).get("data",{}).get("id")
+                      for i in ri0.json().get("data", [])
+                  ]
+                  is_this_version = version_id in item_version_ids
+                  print(f"  Submission {sub_id}: state={sub_state} created={created} this_version={is_this_version}")
+                  if not is_this_version:
+                      continue  # belongs to a different (e.g. already-released) version
                   if sub_state in ("WAITING_FOR_REVIEW", "IN_REVIEW", "COMPLETE"):
-                      print("Already in review or complete!"); sys.exit(0)
+                      print("This version is already in review or complete!"); sys.exit(0)
                   elif sub_state in ("READY_FOR_REVIEW", "DRAFT") and not submission_id:
-                      submission_id = sub_id  # reuse earliest usable one
+                      submission_id = sub_id  # reuse earliest usable one for this version
 
           if not submission_id:
               r = requests.post(f"{BASE}/reviewSubmissions", headers=H(),
