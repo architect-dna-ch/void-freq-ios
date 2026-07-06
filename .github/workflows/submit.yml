@@ -87,24 +87,9 @@ jobs:
                              "relationships": {"build": {"data": {"type": "builds", "id": build_id}}}}})
           print(f"Attach build: {r.status_code}")
 
-          # Set pricing to CHF 2 (Tier 2, $1.99)
-          r2 = requests.post(f"{BASE}/appPriceSchedules", headers=H(),
-              json={
-                  "data": {
-                      "type": "appPriceSchedules",
-                      "relationships": {
-                          "app": {"data": {"type": "apps", "id": app_id}},
-                          "baseTerritory": {"data": {"type": "territories", "id": "USA"}},
-                          "manualPrices": {"data": [{"type": "appPrices", "id": "p2", "tempId": "p2"}]}
-                      }
-                  },
-                  "included": [{
-                      "type": "appPrices", "id": "p2",
-                      "attributes": {"startDate": None},
-                      "relationships": {"appPriceTier": {"data": {"type": "appPriceTiers", "id": "2"}}}
-                  }]
-              })
-          print(f"Set price CHF 2: {r2.status_code}" + ("" if r2.status_code in (200,201,409) else f" {r2.text[:200]}"))
+          # Pricing intentionally left untouched — app is Free Forever per all
+          # public messaging (landing page, screenshots, App Store description).
+          # Do not set a paid price tier here.
 
           # Publish app privacy — get the publish state resource
           r = requests.get(f"{BASE}/apps/{app_id}/appDataUsages", headers=H())
