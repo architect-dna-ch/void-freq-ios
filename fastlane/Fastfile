@@ -1,7 +1,7 @@
 default_platform(:ios)
 
 BUNDLE_ID = "ch.architectdna.voidfreq"
-APP_NAME  = "VOID FREQ"
+APP_NAME  = "VOID FREQ — Focus Studio"
 
 platform :ios do
 

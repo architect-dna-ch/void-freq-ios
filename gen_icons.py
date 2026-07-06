@@ -1,81 +1,47 @@
-from PIL import Image, ImageDraw, ImageFilter
-import math, os
+from PIL import Image, ImageDraw, ImageFont
+import os
 
-BG = (4, 8, 15)
-CYAN = (0, 238, 255)
-PURPLE = (119, 85, 255)
+# ── Beige book / editorial-on-cream palette ──────────────────────────────────
+PAPER = (241, 231, 211)      # warm cream
+INK   = (33, 28, 20)         # near-black warm ink
+RUST  = (168, 64, 42)        # wax-seal rust accent
+
+def serif(size, bold=True):
+    path = "/System/Library/Fonts/Supplemental/Didot.ttc" if bold else \
+           "/System/Library/Fonts/Supplemental/Georgia.ttf"
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        return ImageFont.truetype("/System/Library/Fonts/Supplemental/Georgia Bold.ttf", size)
 
 def make_icon(size):
-    img = Image.new("RGBA", (size, size), BG + (255,))
+    img = Image.new("RGB", (size, size), PAPER)
     d = ImageDraw.Draw(img)
     cx = cy = size / 2
 
-    # Outer glow ring
-    for i in range(6, 0, -1):
-        r = size * 0.38 + i * (size * 0.012)
-        alpha = int(30 - i * 4)
-        overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-        od = ImageDraw.Draw(overlay)
-        od.ellipse([cx - r, cy - r, cx + r, cy + r],
-                   outline=CYAN + (alpha,), width=max(1, size // 80))
-        img = Image.alpha_composite(img, overlay)
+    # Outer ink ring — like a medallion / wax seal edge
+    ring_r = size * 0.44
+    d.ellipse([cx-ring_r, cy-ring_r, cx+ring_r, cy+ring_r],
+              outline=INK, width=max(2, round(size*0.014)))
 
-    # FFT bars radiating outward
-    bars = 48
-    for i in range(bars):
-        angle = (i / bars) * math.pi * 2
-        heights = [0.08, 0.14, 0.22, 0.11, 0.18, 0.09, 0.25, 0.13,
-                   0.07, 0.20, 0.16, 0.10, 0.28, 0.12, 0.08, 0.19,
-                   0.24, 0.10, 0.15, 0.21, 0.09, 0.17, 0.13, 0.22,
-                   0.08, 0.14, 0.22, 0.11, 0.18, 0.09, 0.25, 0.13,
-                   0.07, 0.20, 0.16, 0.10, 0.28, 0.12, 0.08, 0.19,
-                   0.24, 0.10, 0.15, 0.21, 0.09, 0.17, 0.13, 0.22]
-        h = heights[i % len(heights)] * size * 0.28
-        inner_r = size * 0.38
-        outer_r = inner_r + h
-        x1 = cx + math.cos(angle) * inner_r
-        y1 = cy + math.sin(angle) * inner_r
-        x2 = cx + math.cos(angle) * outer_r
-        y2 = cy + math.sin(angle) * outer_r
-        # Color gradient cyan→purple around circle
-        t = i / bars
-        r = int(CYAN[0] * (1 - t) + PURPLE[0] * t)
-        g = int(CYAN[1] * (1 - t) + PURPLE[1] * t)
-        b = int(CYAN[2] * (1 - t) + PURPLE[2] * t)
-        w = max(1, size // 120)
-        overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-        od = ImageDraw.Draw(overlay)
-        od.line([x1, y1, x2, y2], fill=(r, g, b, 220), width=w)
-        img = Image.alpha_composite(img, overlay)
+    # Inner rust ring, slightly inset
+    ring_r2 = size * 0.385
+    d.ellipse([cx-ring_r2, cy-ring_r2, cx+ring_r2, cy+ring_r2],
+              outline=RUST, width=max(1, round(size*0.006)))
 
-    # Inner circle fill
-    d = ImageDraw.Draw(img)
-    ir = size * 0.34
-    d.ellipse([cx - ir, cy - ir, cx + ir, cy + ir], fill=BG + (255,))
+    # Center serif monogram "V"
+    f = serif(round(size * 0.46))
+    text = "V"
+    bbox = d.textbbox((0, 0), text, font=f)
+    tw, th = bbox[2]-bbox[0], bbox[3]-bbox[1]
+    d.text((cx - tw/2 - bbox[0], cy - th/2 - bbox[1] - size*0.02), text, fill=INK, font=f)
 
-    # Inner ring
-    d.ellipse([cx - ir, cy - ir, cx + ir, cy + ir],
-              outline=CYAN + (180,), width=max(1, size // 100))
+    # Small rust underline rule beneath the letter
+    rule_w = size * 0.16
+    rule_y = cy + size * 0.155
+    d.line([cx-rule_w/2, rule_y, cx+rule_w/2, rule_y], fill=RUST, width=max(2, round(size*0.012)))
 
-    # Center dot
-    cr = size * 0.04
-    d.ellipse([cx - cr, cy - cr, cx + cr, cy + cr], fill=CYAN + (255,))
-
-    # "VF" text for larger icons
-    if size >= 120:
-        from PIL import ImageFont
-        try:
-            font_size = max(8, size // 8)
-            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
-        except:
-            font = ImageFont.load_default()
-        text = "VF"
-        bbox = d.textbbox((0, 0), text, font=font)
-        tw = bbox[2] - bbox[0]
-        th = bbox[3] - bbox[1]
-        d.text((cx - tw / 2, cy - th / 2), text, fill=CYAN + (255,), font=font)
-
-    return img.convert("RGB")
+    return img
 
 sizes = [1024, 180, 120, 167, 152, 76, 80, 60, 58, 40, 29, 20]
 out_dir = "/Users/besonnet.kl2/void-freq-ios/icons"
